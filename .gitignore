@@ -1,2 +1,9 @@
 # virtual environment
 .venv/
+
+# bytecode files
+__pycache__/
+
+# database
+db.sqlite3
+
