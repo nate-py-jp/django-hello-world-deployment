@@ -6,4 +6,15 @@ __pycache__/
 
 # database
 db.sqlite3
+# Database files
+*.db
+*.sqlite3
+*.db3
+*.psql
+*.mysql
+*.sql
+*.dump
+*.bak
+*.log
+*.mdb
 
