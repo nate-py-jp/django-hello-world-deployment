@@ -1,5 +1,6 @@
 # virtual environment
 .venv/
+.env
 
 # bytecode files
 __pycache__/
@@ -20,4 +21,8 @@ db.sqlite3
 *.mdb
 
 # static files
-static
+static/
+
+# deployment files
+app.yaml
+
