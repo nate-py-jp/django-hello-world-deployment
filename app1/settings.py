@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from pathlib import Path
 import os
 import environ
-from google.cloud import secretmanager
 
 env = environ.Env()
 
@@ -34,11 +33,7 @@ if os.path.isfile(env_file):
     # get environment variables in development
     env.read_env(env_file)
 
-if os.environ.get("GOOGLE_CLOUD_PROJECT", None):
-    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT")
-    client = secretmanager.SecretManagerServiceClient()
-
-    # CONTINUE FROM HERE!!!!!!
+#if os.environ.get("GOOGLE_CLOUD_PROJECT", None):
 
 
 # settings.py
@@ -52,9 +47,9 @@ STATIC_ROOT = "static/"
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = env('DEBUG', False)
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -103,17 +98,24 @@ WSGI_APPLICATION = "app1.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "USER": "nate",
-        "HOST": "localhost",
-        "PORT": "5432",
-        "NAME": "test",
+if os.environ.get("GOOGLE_CLOUD_PROJECT", None):
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("DB_NAME"),
+        }
     }
-}
-
-
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "USER": env('DB_USER'),
+            "HOST": 'localhost, 127.0.0.1',
+            "PORT": env('DB_PORT'),
+            "NAME": env('DB_NAME'),
+            "PASSWORD": env('DB_PASSWORD'),
+        }
+    }
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
