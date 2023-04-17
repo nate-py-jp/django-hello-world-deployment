@@ -33,7 +33,21 @@ if os.path.isfile(env_file):
     # get environment variables in development
     env.read_env(env_file)
 
-#if os.environ.get("GOOGLE_CLOUD_PROJECT", None):
+else:
+    # get environment variables in production
+    env.read_env()
+
+
+APPENGINE_URL = env("APPENGINE_URL", default=None)
+if APPENGINE_URL:
+    if not urlparse(APPENGINE_URL).scheme:
+        APPENGINE_URL = f"https://{APPENGINE_URL}"
+
+    ALLOWED_HOSTS = [urlparse(APPENGINE_URL).netloc]
+    CSRF_TRUSTED_ORIGINS = [APPENGINE_URL]
+    SECURE_SSL_REDIRECT = True
+else:
+    ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 
 # settings.py
@@ -48,9 +62,6 @@ SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG', False)
-
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
-
 
 # Application definition
 
@@ -99,10 +110,16 @@ WSGI_APPLICATION = "app1.wsgi.application"
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 if os.environ.get("GOOGLE_CLOUD_PROJECT", None):
+
+    DB_CONNECTION_NAME = os.environ('DB_NAME')
+
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("DB_NAME"),
+            "USER": os.environ('DB_USER'),
+            "HOST": f'/cloudsql/{DB_CONNECTION_NAME}',
+            "PASSWORD": os.environ('DB_PASSWORD'),
+            "NAME": os.environ('DB_NAME'),
         }
     }
 else:
