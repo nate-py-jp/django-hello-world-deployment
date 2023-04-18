@@ -12,17 +12,18 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 import os
+from urllib.parse import urlparse
+import newapp
 import environ
 
-env = environ.Env()
-
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-#BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(
-    # set casting, default value
-    DEBUG=(bool, False)
+    DEBUG=(
+        bool, False
+        )
 )
+
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 # Set the project base directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -30,38 +31,40 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 env_file = os.path.join(BASE_DIR, '.env')
 
 if os.path.isfile(env_file):
+    
     # get environment variables in development
     env.read_env(env_file)
+    print("development env")
 
-else:
+elif os.environ.get('GOOGLE_CLOUD_PROJECT', None):
+    
     # get environment variables in production
     env.read_env()
+    print("production env")
+    print("Google cloud project env var:", GOOGLE_CLOUD_PROJECT)
 
+else:
+    raise Exception("No .env file or GOOGLE_CLOUD_PROJECT detected. No environment variables found.")
 
-APPENGINE_URL = env("APPENGINE_URL", default=None)
+SECRET_KEY = env('SECRET_KEY')
+DEBUG = env('DEBUG')
+
+APPENGINE_URL = env('APPENGINE_URL', default=None)
 if APPENGINE_URL:
     if not urlparse(APPENGINE_URL).scheme:
-        APPENGINE_URL = f"https://{APPENGINE_URL}"
+        APPENGINE_URL = f"http://{APPENGINE_URL}"
+        ALLOWED_HOSTS = [urlparse(APPENGINE_URL).netloc]
 
-    ALLOWED_HOSTS = [urlparse(APPENGINE_URL).netloc]
-    CSRF_TRUSTED_ORIGINS = [APPENGINE_URL]
-    SECURE_SSL_REDIRECT = True
-else:
-    ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+        print("APPENGINE_URL:", APPENGINE_URL)
+        
+        # not sure if i need(but in the example):
 
+        # CSRF_TRUSTED_ORIGINS = [APPENGINE_URL]
+        # SECURE_SSL_REDIRECTS = True
 
-# settings.py
-STATIC_ROOT = "static/"
+    else:
+        ALLOWED_HOSTS = [env('ALLOWED_HOSTS')]
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY')
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG', False)
 
 # Application definition
 
@@ -106,20 +109,21 @@ TEMPLATES = [
 WSGI_APPLICATION = "app1.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/4.1/ref/settings/#databases
+# Databases
 
-if os.environ.get("GOOGLE_CLOUD_PROJECT", None):
+if env("GOOGLE_CLOUD_PROJECT", default=None):
 
-    DB_CONNECTION_NAME = os.environ('DB_NAME')
+    DB_CONNECTION_NAME = env('DB_NAME')
+    
+    print("DB_CONNECTION_NAME", DB_CONNECTION_NAME)
 
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "USER": os.environ('DB_USER'),
+            "USER": env('DB_USER'),
             "HOST": f'/cloudsql/{DB_CONNECTION_NAME}',
-            "PASSWORD": os.environ('DB_PASSWORD'),
-            "NAME": os.environ('DB_NAME'),
+            "PASSWORD": env('DB_PASSWORD'),
+            "NAME": env('DB_NAME'),
         }
     }
 else:
@@ -127,7 +131,7 @@ else:
         "default": {
             "ENGINE": "django.db.backends.postgresql",
             "USER": env('DB_USER'),
-            "HOST": 'localhost, 127.0.0.1',
+            "HOST": env('ALLOWED_HOSTS'),
             "PORT": env('DB_PORT'),
             "NAME": env('DB_NAME'),
             "PASSWORD": env('DB_PASSWORD'),
@@ -158,10 +162,9 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/4.1/howto/static-files/
-
-STATIC_URL = "static/"
+STATIC_ROOT = "static"
+STATIC_URL = "/static/"
+STATICFILES_DIRS = []
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
